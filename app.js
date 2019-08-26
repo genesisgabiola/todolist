@@ -6,20 +6,24 @@ const _ = require('lodash');
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-// const items = ['Web and App Dev', 'Design Concepts', 'Tech News'];
-// const workItems = [];
-
 app.set('view engine', 'ejs');
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(express.static('public'));
 
-mongoose.connect('mongodb://localhost:27017/todolistDB', { useNewUrlParser: true });
+// mongodb://localhost:27017/todolistDB
+mongoose.connect(process.env.DATABASEURL, { useNewUrlParser: true });
 
 const itemsSchema = new mongoose.Schema({
   name: String
 });
 
+const listSchema = {
+  name: String,
+  items: [itemsSchema]
+};
+
 const Item = mongoose.model('Item', itemsSchema);
+const List = mongoose.model('List', listSchema);
 
 const item1 = new Item({
   name: 'Welcome to your todo list!'
@@ -34,13 +38,6 @@ const item3 = new Item({
 });
 
 const defaultItems = [item1, item2, item3];
-
-const listSchema = {
-  name: String,
-  items: [itemsSchema]
-};
-
-const List = mongoose.model('List', listSchema);
 
 app.get('/', function(req, res) {
   Item.find({}, function(err, foundItems) {
@@ -70,13 +67,16 @@ app.get('/:customListName', function(req, res) {
           name: customListName,
           items: defaultItems
         });
-      
         list.save();
         res.redirect('/' + customListName);
       } else {
         // Show an existing list
-        res.render('list', { listTitle: foundList.name, newListItems: foundList.items });
+        res.render('list', {
+          listTitle: foundList.name, newListItems: foundList.items
+        });
       }
+    } else {
+      console.log(err);
     }
   });
 });
@@ -99,15 +99,6 @@ app.post('/', function(req, res) {
       res.redirect('/' + listName);
     });
   }
-
-
-  // if (req.body.list === 'Work List') {
-  //   workItems.push(item);
-  //   res.redirect('/work');
-  // } else {
-  //   items.push(item)
-  //   res.redirect('/');
-  // }
 });
 
 app.post('/delete', function(req, res) {
@@ -122,6 +113,7 @@ app.post('/delete', function(req, res) {
       }
     });
   } else {
+    // Pull (remove) from items array an item with id
     List.findOneAndUpdate({name: listName}, {$pull: {items: {_id: checkedItemId}}}, function(err, foundList) {
       if (!err) {
         res.redirect('/' + listName);
@@ -129,13 +121,6 @@ app.post('/delete', function(req, res) {
     });
   }
 });
-
-// app.get('/work', function(req, res) {
-//   res.render('list', {
-//     listTitle: 'Work List',
-//     newListItems: workItems
-//   });
-// });
 
 app.get('/about', function(req, res) {
   res.render('about');
