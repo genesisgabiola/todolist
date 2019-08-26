@@ -5,13 +5,13 @@ const _ = require('lodash');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
+const DB = process.env.DATABASEURL || 'mongodb://localhost:27017/todolistDB';
 
 app.set('view engine', 'ejs');
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(express.static('public'));
 
-// mongodb://localhost:27017/todolistDB
-mongoose.connect(process.env.DATABASEURL, { useNewUrlParser: true });
+mongoose.connect(DB, { useNewUrlParser: true });
 
 const itemsSchema = new mongoose.Schema({
   name: String
